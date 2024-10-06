@@ -1,9 +1,9 @@
-# Project Name
+# Synaptik AMQP
 
-Description
+Library to use `@sektek/synaptik` with RabbitMQ
 
 ## Installation
 
 ```sh
-npm install @sektek/project-name
+npm install @sektek/synaptik-amqp
 ```
