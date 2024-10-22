@@ -18,6 +18,8 @@
     "test": "mocha"
   },
   "dependencies": {
+    "@sektek/utility-belt": "^1.0.0",
+    "@sektek/synaptik": "^1.0.0",
     "tslib": "^2.7.0"
   },
   "devDependencies": {
