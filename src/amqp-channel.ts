@@ -143,9 +143,9 @@ export class AmqpChannel<T extends Event = Event>
               )
             ) {
               resolve();
+            } else {
+              reject(new Error('Failed to publish message'));
             }
-
-            reject(new Error('Failed to publish message'));
           };
 
           timeout = setTimeout(() => {
