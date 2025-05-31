@@ -275,7 +275,7 @@ describe('AmqpChannel', function () {
       const amqpChannel = new AmqpChannel({
         channelProvider,
         queueName,
-        serializer: {
+        eventSerializer: {
           serialize: (event: Event) => event.data.test as string,
         },
       });

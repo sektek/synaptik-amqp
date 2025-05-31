@@ -22,7 +22,7 @@ export type AmqpGatewayOptions<
   R extends EventHandlerReturnType = unknown,
 > = AmqpServiceOptions & {
   consumeOptions?: Options.Consume;
-  extractor?: MessageEventExtractorFn<T>;
+  eventExtractor?: MessageEventExtractorFn<T>;
   handler: EventHandlerFn<T, R>;
   /** Only applies if noAck is false */
   requeueOnError?: boolean;
@@ -96,17 +96,15 @@ export class AmqpGateway<
     this.#consumeOptions = opts.consumeOptions ?? {};
     this.#prefetch = opts.prefetch ?? 0;
 
-    this.#channelProvider = getComponent(
-      opts.channelProvider,
-      'get',
-      new DefaultChannelProvider(opts),
-    );
+    this.#channelProvider = getComponent(opts.channelProvider, 'get', {
+      name: 'channelProvider',
+      defaultProvider: () => new DefaultChannelProvider(opts),
+    });
 
-    this.#extractor = getComponent(
-      opts.extractor,
-      'extract',
-      defaultEventExtractor<T>,
-    );
+    this.#extractor = getComponent(opts.eventExtractor, 'extract', {
+      name: 'eventExtractor',
+      default: defaultEventExtractor<T>,
+    });
     this.#handler = getEventHandlerComponent(opts.handler);
 
     if (this.#consumeOptions.noAck) {

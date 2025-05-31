@@ -62,7 +62,7 @@ export type AmqpChannelOptions<T extends Event = Event> = AmqpServiceOptions & {
   queueName?: string;
   routingKey?: string;
   routingKeyProvider?: RoutingKeyProviderComponent<T>;
-  serializer?: AmqpSerializerComponent<T>;
+  eventSerializer?: AmqpSerializerComponent<T>;
   timeout?: number;
 };
 
@@ -84,31 +84,31 @@ export class AmqpChannel<T extends Event = Event>
 
     this.#timeout = opts.timeout ?? DEFAULT_TIMEOUT;
 
-    this.#channelProvider = getComponent(
-      opts.channelProvider,
-      'get',
-      new DefaultChannelProvider(opts),
-    );
+    this.#channelProvider = getComponent(opts.channelProvider, 'get', {
+      name: 'channelProvider',
+      defaultProvider: () => new DefaultChannelProvider(opts),
+    });
 
     this.#exchange = opts.exchange ?? DEFAULT_EXCHANGE;
 
-    this.#eventSerializer = getComponent(
-      opts.serializer,
-      'serialize',
-      DEFAULT_SERIALIZER,
-    );
+    this.#eventSerializer = getComponent(opts.eventSerializer, 'serialize', {
+      name: 'eventSerializer',
+      default: DEFAULT_SERIALIZER,
+    });
 
     this.#publishOptionsProvider = getComponent(
       opts.publishOptionsProvider,
       'get',
-      DEFAULT_PUBLISH_OPTIONS_PROVIDER,
+      {
+        name: 'publishOptionsProvider',
+        default: DEFAULT_PUBLISH_OPTIONS_PROVIDER,
+      },
     );
 
-    this.#routingKeyProvider = getComponent(
-      opts.routingKeyProvider,
-      'get',
-      () => opts.routingKey ?? opts.queueName ?? '',
-    );
+    this.#routingKeyProvider = getComponent(opts.routingKeyProvider, 'get', {
+      name: 'routingKeyProvider',
+      default: () => opts.routingKey ?? opts.queueName ?? '',
+    });
   }
 
   async send(event: T, options: SendOptions = {}) {

@@ -83,23 +83,24 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
 
     this.#outboundChannel = outboundChannel.send.bind(outboundChannel);
 
-    this.#channelProvider = getComponent(
-      opts.channelProvider,
-      'get',
-      new DefaultChannelProvider(opts),
-    );
+    this.#channelProvider = getComponent(opts.channelProvider, 'get', {
+      name: 'channelProvider',
+      defaultProvider: () => new DefaultChannelProvider(opts),
+    });
     this.#timeout = opts.timeout ?? 0;
     this.#correlationIdProvider = getComponent(
       opts.correlationIdProvider,
       'get',
-      () => randomUUID(),
+      {
+        name: 'correlationIdProvider',
+        default: () => randomUUID(),
+      },
     );
 
-    this.#extractor = getComponent(
-      opts.extractor,
-      'get',
-      defaultEventExtractor<R>,
-    );
+    this.#extractor = getComponent(opts.extractor, 'get', {
+      name: 'extractor',
+      default: defaultEventExtractor<R>,
+    });
   }
 
   async process(event: T): Promise<R> {
