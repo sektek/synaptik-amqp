@@ -1,13 +1,13 @@
 import EventEmitter from 'events';
 
-import { Channel, Connection, connect } from 'amqplib';
+import { Channel, ChannelModel, connect } from 'amqplib';
 
 import { ConnectionOptions } from './types/connection-options.js';
 import { EventEmittingService } from '@sektek/utility-belt';
 
 type ChannelProviderOptions = {
   channel?: Channel;
-  connection?: Connection;
+  connection?: ChannelModel;
   connectionOptions?: ConnectionOptions;
 };
 
@@ -15,7 +15,7 @@ type DefaultChannelProviderEvents = {
   'channel:created': (channel: Channel) => void;
   'channel:closed': () => void;
   'channel:error': (error: unknown) => void;
-  'connection:created': (connection: Connection) => void;
+  'connection:created': (connection: ChannelModel) => void;
   'connection:closed': () => void;
   'connection:error': (error: unknown) => void;
 };
@@ -25,7 +25,7 @@ export class DefaultChannelProvider
   implements EventEmittingService<DefaultChannelProviderEvents>
 {
   #channel?: Channel;
-  #connection?: Connection;
+  #connection?: ChannelModel;
   #connectionOptions?: ConnectionOptions;
 
   constructor(opts: ChannelProviderOptions) {
@@ -53,7 +53,7 @@ export class DefaultChannelProvider
     return this.#channel;
   }
 
-  async connection(): Promise<Connection> {
+  async connection(): Promise<ChannelModel> {
     if (this.#connection) {
       return this.#connection;
     }

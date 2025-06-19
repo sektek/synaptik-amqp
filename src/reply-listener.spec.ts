@@ -5,7 +5,7 @@ import sinon, { spy } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
-import { Connection, connect } from 'amqplib';
+import { ChannelModel, connect } from 'amqplib';
 import { Event, EventBuilder } from '@sektek/synaptik';
 
 import { AmqpChannel } from './amqp-channel.js';
@@ -20,7 +20,7 @@ const AMQP_HOST = process.env.AMQP_HOST || 'localhost';
 const WAIT_TIME = 500;
 
 describe('ReplyListener', function () {
-  let connection: Connection;
+  let connection: ChannelModel;
   let channelProvider: DefaultChannelProvider;
   let event: Event, replyEvent: Event;
   let eventChannel: AmqpChannel;

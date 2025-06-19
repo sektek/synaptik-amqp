@@ -5,7 +5,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { fake } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import { Connection, connect } from 'amqplib';
+import { ChannelModel, connect } from 'amqplib';
 import { Event, EventBuilder } from '@sektek/synaptik';
 
 import { AmqpChannel } from './amqp-channel.js';
@@ -17,7 +17,7 @@ use(chaiAsPromised);
 const AMQP_HOST = process.env.AMQP_HOST || 'localhost';
 
 describe('AmqpChannel', function () {
-  let connection: Connection;
+  let connection: ChannelModel;
   let channelProvider: DefaultChannelProvider;
 
   before(async function () {

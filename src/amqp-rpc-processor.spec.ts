@@ -5,7 +5,13 @@ import sinon, { fake, match } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
-import { Channel, Connection, ConsumeMessage, Replies, connect } from 'amqplib';
+import {
+  Channel,
+  ChannelModel,
+  ConsumeMessage,
+  Replies,
+  connect,
+} from 'amqplib';
 import { Event, EventBuilder } from '@sektek/synaptik';
 
 import { AmqpChannel } from './amqp-channel.js';
@@ -54,7 +60,7 @@ const respond = async (
 
 describe('AmqpRpcProcessor', function () {
   let queueName: string;
-  let connection: Connection;
+  let connection: ChannelModel;
   let channelProvider: DefaultChannelProvider;
   let outboundChannel: AmqpChannel;
   let consumer: Replies.Consume | null = null;

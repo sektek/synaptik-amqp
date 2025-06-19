@@ -4,7 +4,7 @@ import { expect, use } from 'chai';
 import sinon, { fake, match, spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import { Channel, Connection, ConsumeMessage, connect } from 'amqplib';
+import { Channel, ChannelModel, ConsumeMessage, connect } from 'amqplib';
 import { EventBuilder } from '@sektek/synaptik';
 
 import { AmqpChannel } from './amqp-channel.js';
@@ -18,7 +18,7 @@ const WAIT_TIME = 500;
 
 describe('AmqpGateway', function () {
   let queueName: string;
-  let connection: Connection, channel: Channel;
+  let connection: ChannelModel, channel: Channel;
   let channelProvider: DefaultChannelProvider;
   let eventChannel: AmqpChannel;
 

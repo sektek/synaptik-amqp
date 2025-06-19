@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { Connection, connect } from 'amqplib';
+import { ChannelModel, connect } from 'amqplib';
 
 import { DefaultChannelProvider } from './default-channel-provider.js';
 
@@ -8,7 +8,7 @@ const AMQP_HOST = process.env.AMQP_HOST || 'localhost';
 
 describe('DefaultChannelProvider', function () {
   describe('Provided connection', function () {
-    let connection: Connection;
+    let connection: ChannelModel;
 
     before(async function () {
       connection = await connect({ hostname: AMQP_HOST });
