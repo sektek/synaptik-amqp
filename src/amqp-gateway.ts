@@ -11,6 +11,7 @@ import { EventEmittingService, getComponent } from '@sektek/utility-belt';
 
 import {
   AmqpServiceOptions,
+  ChannelProviderComponent,
   ChannelProviderFn,
   MessageEventExtractorFn,
 } from './types/index.js';
@@ -21,6 +22,8 @@ export type AmqpGatewayOptions<
   T extends Event = Event,
   R extends EventHandlerReturnType = unknown,
 > = AmqpServiceOptions & {
+  channel?: Channel;
+  channelProvider?: ChannelProviderComponent<void>;
   consumeOptions?: Options.Consume;
   eventExtractor?: MessageEventExtractorFn<T>;
   handler: EventHandlerFn<T, R>;
@@ -77,7 +80,7 @@ export class AmqpGateway<
   extends AbstractEventService
   implements EventEmittingService<AmqpGatewayEvents<T, R>>
 {
-  #channelProvider: ChannelProviderFn;
+  #channelProvider: ChannelProviderFn<void>;
   #consumeOptions: Options.Consume;
   #extractor: MessageEventExtractorFn<T>;
   #handler: EventHandlerFn<T, R>;

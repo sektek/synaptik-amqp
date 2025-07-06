@@ -3,18 +3,19 @@ import {
   Event,
   EventChannelEvents,
 } from '@sektek/synaptik';
+import { Channel, Options } from 'amqplib';
 import {
   Component,
   EventEmittingService,
   getComponent,
 } from '@sektek/utility-belt';
-import { Options } from 'amqplib';
 
 import {
   AmqpSerializerComponent,
   AmqpSerializerFn,
   AmqpSerializerReturnType,
   AmqpServiceOptions,
+  ChannelProviderComponent,
   ChannelProviderFn,
   PublishOptionsProviderComponent,
   PublishOptionsProviderFn,
@@ -57,6 +58,8 @@ export type AmqpChannelEvents<T extends Event = Event> =
   };
 
 export type AmqpChannelOptions<T extends Event = Event> = AmqpServiceOptions & {
+  channel?: Channel;
+  channelProvider?: ChannelProviderComponent<T>;
   exchange?: string;
   publishOptionsProvider?: PublishOptionsProviderComponent<T>;
   queueName?: string;
@@ -72,7 +75,7 @@ export class AmqpChannel<T extends Event = Event>
   extends AbstractEventService
   implements EventEmittingService<AmqpChannelEvents<T>>
 {
-  #channelProvider: ChannelProviderFn;
+  #channelProvider: ChannelProviderFn<Event>;
   #eventSerializer: AmqpSerializerFn<T>;
   #exchange: string;
   #publishOptionsProvider: PublishOptionsProviderFn<T>;
@@ -115,7 +118,7 @@ export class AmqpChannel<T extends Event = Event>
     this.emit('event:received', event);
 
     try {
-      const channel = await this.#channelProvider();
+      const channel = await this.#channelProvider(event);
       const serialized = await this.#eventSerializer(event);
       const publishOptions = await this.#publishOptionsProvider(event, options);
       const exchange = options.exchange ?? this.#exchange;

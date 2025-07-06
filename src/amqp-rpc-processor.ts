@@ -6,7 +6,7 @@ import {
   EventProcessor,
   PromiseChannel,
 } from '@sektek/synaptik';
-import { ConsumeMessage, Options } from 'amqplib';
+import { Channel, ConsumeMessage, Options } from 'amqplib';
 import { EventEmittingService, getComponent } from '@sektek/utility-belt';
 
 import {
@@ -16,6 +16,7 @@ import {
 } from './amqp-channel.js';
 import {
   AmqpSerializerReturnType,
+  ChannelProviderComponent,
   ChannelProviderFn,
   CorrelationIdProviderComponent,
   CorrelationIdProviderFn,
@@ -31,6 +32,8 @@ type AmqpProcessorOptions<
   T extends Event = Event,
   R extends Event = T,
 > = AmqpChannelOptions & {
+  channel?: Channel;
+  channelProvider?: ChannelProviderComponent<T>;
   outboundChannel?: AmqpChannel<T>;
   extractor?: MessageEventExtractorComponent<R>;
   correlationIdProvider?: CorrelationIdProviderComponent<T>;
@@ -60,7 +63,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
     EventEmittingService<AmqpRpcProcessorEvents<T, R>>
 {
   #outboundChannel: AmqpChannelFn<T>;
-  #channelProvider: ChannelProviderFn;
+  #channelProvider: ChannelProviderFn<Event>;
   #correlationIdProvider: CorrelationIdProviderFn<T>;
   #extractor: MessageEventExtractorFn<R>;
   #timeout: number;
@@ -105,7 +108,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
 
   async process(event: T): Promise<R> {
     this.emit('event:received', event);
-    const channel = await this.#channelProvider();
+    const channel = await this.#channelProvider(event);
     const replyQueue = await channel.assertQueue('', { exclusive: true });
     const promiseChannel = new PromiseChannel<R>({ timeout: this.#timeout });
     const correlationId = await this.#correlationIdProvider(event);
