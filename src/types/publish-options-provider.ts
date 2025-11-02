@@ -11,7 +11,7 @@ export type PublishOptionsProviderFn<T extends Event = Event> = (
 ) => Options.Publish | PromiseLike<Options.Publish>;
 
 export interface PublishOptionsProvider<T extends Event = Event>
-  extends EventBasedProvider<T, Options.Publish> {}
+  extends EventBasedProvider<Options.Publish, T> {}
 
 export type PublishOptionsProviderComponent<T extends Event = Event> =
-  EventBasedProviderComponent<T, Options.Publish>;
+  EventBasedProviderComponent<Options.Publish, T>;

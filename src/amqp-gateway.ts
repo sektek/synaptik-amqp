@@ -23,7 +23,7 @@ export type AmqpGatewayOptions<
   R extends EventHandlerReturnType = unknown,
 > = AmqpServiceOptions & {
   channel?: Channel;
-  channelProvider?: ChannelProviderComponent<void>;
+  channelProvider?: ChannelProviderComponent;
   consumeOptions?: Options.Consume;
   eventExtractor?: MessageEventExtractorFn<T>;
   handler: EventHandlerFn<T, R>;
@@ -80,7 +80,7 @@ export class AmqpGateway<
   extends AbstractEventService
   implements EventEmittingService<AmqpGatewayEvents<T, R>>
 {
-  #channelProvider: ChannelProviderFn<void>;
+  #channelProvider: ChannelProviderFn;
   #consumeOptions: Options.Consume;
   #extractor: MessageEventExtractorFn<T>;
   #handler: EventHandlerFn<T, R>;
