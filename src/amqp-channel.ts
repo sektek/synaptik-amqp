@@ -1,5 +1,8 @@
 import {
   AbstractEventService,
+  EVENT_DELIVERED,
+  EVENT_ERROR,
+  EVENT_RECEIVED,
   Event,
   EventChannelEvents,
 } from '@sektek/synaptik';
@@ -115,7 +118,7 @@ export class AmqpChannel<T extends Event = Event>
   }
 
   async send(event: T, options: SendOptions = {}) {
-    this.emit('event:received', event);
+    this.emit(EVENT_RECEIVED, event);
 
     try {
       const channel = await this.#channelProvider(event);
@@ -167,9 +170,9 @@ export class AmqpChannel<T extends Event = Event>
         publishOptions,
         serialized,
       );
-      this.emit('event:delivered', event);
+      this.emit(EVENT_DELIVERED, event);
     } catch (err) {
-      this.emit('event:error', event, err);
+      this.emit(EVENT_ERROR, err, event);
 
       throw err;
     }

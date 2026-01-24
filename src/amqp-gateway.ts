@@ -1,5 +1,8 @@
 import {
   AbstractEventService,
+  EVENT_ERROR,
+  EVENT_PROCESSED,
+  EVENT_RECEIVED,
   Event,
   EventHandlerEvents,
   EventHandlerFn,
@@ -7,7 +10,11 @@ import {
   getEventHandlerComponent,
 } from '@sektek/synaptik';
 import { Channel, ConsumeMessage, Options, Replies } from 'amqplib';
-import { EventEmittingService, getComponent } from '@sektek/utility-belt';
+import {
+  ErrorHandlerFn,
+  EventEmittingService,
+  getComponent,
+} from '@sektek/utility-belt';
 
 import {
   AmqpServiceOptions,
@@ -47,7 +54,7 @@ export type AmqpGatewayEvents<
     message: ConsumeMessage,
     event: T,
   ) => void;
-  'message:error': (event: ConsumeMessage, err: Error) => void;
+  'message:error': ErrorHandlerFn<ConsumeMessage>;
 };
 
 type AckFn<T extends Event = Event> = (
@@ -154,7 +161,7 @@ export class AmqpGateway<
     try {
       this.emit('message:received', message);
       event = await this.#extractor(message);
-      this.emit('event:received', event);
+      this.emit(EVENT_RECEIVED, event);
       channel = await this.#channelProvider();
 
       if (!channel) {
@@ -162,15 +169,15 @@ export class AmqpGateway<
       }
 
       const result = await this.#handler(event);
-      this.emit('event:processed', event, result);
+      this.emit(EVENT_PROCESSED, event, result);
       this.emit('message:processed', message, event, result);
       this.#ackFn(channel, message, event);
     } catch (err) {
       this.#nackFn(channel, message);
       if (event) {
-        this.emit('event:error', event, err);
+        this.emit(EVENT_ERROR, err, event);
       }
-      this.emit('message:error', message, err);
+      this.emit('message:error', err, message);
     }
   }
 

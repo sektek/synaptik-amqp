@@ -206,7 +206,7 @@ describe('AmqpGateway', function () {
       await gateway.start();
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
 
-      expect(listener).to.have.been.calledWith(event, error);
+      expect(listener).to.have.been.calledWith(error, event);
     });
 
     it('should emit a message:error on error', async function () {
@@ -222,7 +222,7 @@ describe('AmqpGateway', function () {
       await gateway.start();
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
 
-      expect(listener).to.have.been.calledWith(match.typeOf('object'), error);
+      expect(listener).to.have.been.calledWith(error, match.typeOf('object'));
     });
   });
 });

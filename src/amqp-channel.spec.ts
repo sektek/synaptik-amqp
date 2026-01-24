@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 
 import { expect, use } from 'chai';
+import { fake, match } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
-import { fake } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import { ChannelModel, connect } from 'amqplib';
@@ -249,7 +249,7 @@ describe('AmqpChannel', function () {
       connection.close();
 
       await expect(amqpChannel.send(event)).to.eventually.be.rejected;
-      expect(listener).to.have.been.calledWith(event);
+      expect(listener).to.have.been.calledWith(match.instanceOf(Error), event);
 
       // Reestablish the connection for any following tests
       connection = await connect({ hostname: AMQP_HOST });
