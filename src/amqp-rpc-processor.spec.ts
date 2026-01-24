@@ -250,7 +250,7 @@ describe('AmqpRpcProcessor', function () {
 
       expect(processor.process(event)).to.be.rejectedWith(error);
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
-      expect(listener).to.have.been.calledWith(event, error);
+      expect(listener).to.have.been.calledWith(error, event);
     });
 
     it('should emit a message:error event', async function () {
@@ -274,7 +274,7 @@ describe('AmqpRpcProcessor', function () {
 
       expect(processor.process(event)).to.be.rejectedWith(error);
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
-      expect(listener).to.have.been.calledWith(match.any, error);
+      expect(listener).to.have.been.calledWith(error, match.any);
     });
 
     it('should emit a message:error event when the correlation id does not match', async function () {
@@ -297,10 +297,10 @@ describe('AmqpRpcProcessor', function () {
       );
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
       expect(listener).to.have.been.calledWith(
-        match.typeOf('object'),
         match
           .instanceOf(Error)
           .and(match.has('message', match(/Expected correlationId/))),
+        match.typeOf('object'),
       );
     });
 
@@ -324,10 +324,10 @@ describe('AmqpRpcProcessor', function () {
       );
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
       expect(listener).to.have.been.calledWith(
-        match.typeOf('object'),
         match
           .instanceOf(Error)
           .and(match.has('message', match(/Expected correlationId/))),
+        match.typeOf('object'),
       );
     });
   });

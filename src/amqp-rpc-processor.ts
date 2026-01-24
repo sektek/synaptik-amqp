@@ -2,12 +2,20 @@ import { randomUUID } from 'crypto';
 
 import {
   AbstractEventService,
+  EVENT_ERROR,
+  EVENT_PROCESSED,
+  EVENT_RECEIVED,
   Event,
+  EventHandlerEvents,
   EventProcessor,
   PromiseChannel,
 } from '@sektek/synaptik';
 import { Channel, ConsumeMessage, Options } from 'amqplib';
-import { EventEmittingService, getComponent } from '@sektek/utility-belt';
+import {
+  ErrorHandlerFn,
+  EventEmittingService,
+  getComponent,
+} from '@sektek/utility-belt';
 
 import {
   AmqpChannel,
@@ -41,10 +49,10 @@ type AmqpProcessorOptions<
   timeout?: number;
 };
 
-type AmqpRpcProcessorEvents<T extends Event = Event, R extends Event = T> = {
-  'event:error': (event: T, err: Error) => void;
-  'event:processed': (event: T, result: R) => void;
-  'event:received': (event: T) => void;
+type AmqpRpcProcessorEvents<
+  T extends Event = Event,
+  R extends Event = T,
+> = EventHandlerEvents<T, R> & {
   'message:received': (message: ConsumeMessage) => void;
   [MESSAGE_SENT_EVENT]: (
     exchange: string,
@@ -53,7 +61,7 @@ type AmqpRpcProcessorEvents<T extends Event = Event, R extends Event = T> = {
     message: AmqpSerializerReturnType,
   ) => void;
   'message:processed': (message: ConsumeMessage, event: T, result: R) => void;
-  'message:error': (event: ConsumeMessage, err: Error) => void;
+  'message:error': ErrorHandlerFn<ConsumeMessage>;
 };
 
 export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
@@ -107,7 +115,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
   }
 
   async process(event: T): Promise<R> {
-    this.emit('event:received', event);
+    this.emit(EVENT_RECEIVED, event);
     const channel = await this.#channelProvider(event);
     const replyQueue = await channel.assertQueue('', { exclusive: true });
     const promiseChannel = new PromiseChannel<R>({ timeout: this.#timeout });
@@ -129,10 +137,10 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
           const result = await this.#extractor(message);
           promiseChannel.send(result);
           this.emit('message:processed', message, event, result);
-          this.emit('event:processed', event, result);
+          this.emit(EVENT_PROCESSED, event, result);
         } catch (err) {
-          this.emit('message:error', message, err);
-          this.emit('event:error', event, err);
+          this.emit('message:error', err, message);
+          this.emit(EVENT_ERROR, err, event);
           promiseChannel.send(err);
         } finally {
           await channel.cancel(consumer.consumerTag);
