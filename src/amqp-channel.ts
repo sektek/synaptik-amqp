@@ -136,7 +136,7 @@ export class AmqpChannel<T extends Event = Event>
 
       if (!success) {
         await new Promise<void>((resolve, reject) => {
-          // eslint-disable-next-line prefer-const, no-undef
+          // eslint-disable-next-line prefer-const
           let timeout: NodeJS.Timeout | undefined;
           const onDrain = () => {
             clearTimeout(timeout);

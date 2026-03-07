@@ -167,6 +167,7 @@ describe('AmqpGateway', function () {
       await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
 
       expect(listener).to.have.been.calledWith(
+        // eslint-disable-next-line sonarjs/no-same-argument-assert
         match.typeOf('object'),
         match.typeOf('object'),
         event,

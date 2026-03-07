@@ -81,9 +81,9 @@ const noAckFn = () => {};
  * The `AmqpGateway` class provides functionality for handling AMQP events.
  */
 export class AmqpGateway<
-    T extends Event = Event,
-    R extends EventHandlerReturnType = unknown,
-  >
+  T extends Event = Event,
+  R extends EventHandlerReturnType = unknown,
+>
   extends AbstractEventService
   implements EventEmittingService<AmqpGatewayEvents<T, R>>
 {

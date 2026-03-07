@@ -23,15 +23,15 @@
     "tslib": "^2.7.0"
   },
   "devDependencies": {
-    "@sektek/eslint-plugin": "1.0.1",
-    "@sektek/prettier-config": "1.1.3",
+    "@sektek/eslint-plugin": "^2.0.0",
+    "@sektek/prettier-config": "^2.0.0",
     "@types/amqplib": "^0.10.7",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "@types/node": "^24.0.10",
     "c8": "^10.1.3",
     "chai": "^5.1.1",
-    "eslint": "^8.57.0",
+    "eslint": "^9.39.1",
     "mocha": "^10.4.0",
     "prettier": "^3.2.5",
     "tsx": "^4.20.3",
