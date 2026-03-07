@@ -62,6 +62,7 @@ describe('ReplyListener', function () {
   it('should send a reply message when message is processed', async function () {
     const outboundChannel = new AmqpChannel({ channelProvider });
     const sendSpy = spy(outboundChannel, 'send');
+    // eslint-disable-next-line sonarjs/constructor-for-side-effects
     new ReplyListener({ outboundChannel, gateway });
 
     await eventChannel.send(event, {
