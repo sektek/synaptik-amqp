@@ -76,4 +76,15 @@ export class DefaultChannelProvider
 
     return this.#connection;
   }
+
+  async stop() {
+    if (this.#channel) {
+      await this.#channel.close();
+      this.#channel = undefined;
+    }
+    if (this.#connection) {
+      await this.#connection.close();
+      this.#connection = undefined;
+    }
+  }
 }

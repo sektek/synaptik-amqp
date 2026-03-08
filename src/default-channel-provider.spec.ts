@@ -33,6 +33,8 @@ describe('DefaultChannelProvider', function () {
       const channel = await provider.get();
       expect(channel.constructor.name).to.equal('Channel');
       expect(channel.connection.constructor.name).to.equal('Connection');
+      await channel.close();
+      await provider.stop();
     });
   });
 
@@ -44,6 +46,8 @@ describe('DefaultChannelProvider', function () {
       const channel = await provider.get();
       expect(channel.constructor.name).to.equal('Channel');
       expect(channel.connection.constructor.name).to.equal('Connection');
+      await channel.close();
+      await provider.stop();
     });
   });
 });
