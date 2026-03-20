@@ -18,7 +18,7 @@ const WAIT_TIME = 500;
 
 describe('AmqpGateway', function () {
   let queueName: string;
-  let gateway: AmqpGateway;
+  let gateway: AmqpGateway | undefined;
   let connection: ChannelModel, channel: Channel;
   let channelProvider: DefaultChannelProvider;
   let eventChannel: AmqpChannel;
@@ -35,6 +35,7 @@ describe('AmqpGateway', function () {
   afterEach(async function () {
     if (gateway) {
       await gateway.stop();
+      gateway = undefined;
     }
     await channel.deleteQueue(queueName);
     await channel.close();

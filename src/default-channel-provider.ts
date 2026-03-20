@@ -1,44 +1,53 @@
 import EventEmitter from 'events';
 
 import { Channel, ChannelModel, connect } from 'amqplib';
-
-import { ConnectionOptions } from './types/connection-options.js';
 import { EventEmittingService } from '@sektek/utility-belt';
 
-type ChannelProviderOptions = {
+import { ConnectionOptions, ConnectionProvider } from './types/index.js';
+
+import {
+  DefaultConnectionProvider,
+  DefaultConnectionProviderOptions,
+} from './default-connection-provider.js';
+
+type ChannelProviderOptions<T = void> = DefaultConnectionProviderOptions & {
   channel?: Channel;
-  connection?: ChannelModel;
-  connectionOptions?: ConnectionOptions;
+  connectionProvider?: ConnectionProvider<T>;
 };
 
 type DefaultChannelProviderEvents = {
   'channel:created': (channel: Channel) => void;
   'channel:closed': () => void;
   'channel:error': (error: unknown) => void;
-  'connection:created': (connection: ChannelModel) => void;
-  'connection:closed': () => void;
-  'connection:error': (error: unknown) => void;
 };
 
-export class DefaultChannelProvider
+export class DefaultChannelProvider<T = void>
   extends EventEmitter
   implements EventEmittingService<DefaultChannelProviderEvents>
 {
   #channel?: Channel;
-  #connection?: ChannelModel;
-  #connectionOptions?: ConnectionOptions;
+  #closeChannelOnStop = true;
+  #connectionProvider?: ConnectionProvider<T>;
+  #propegateStop = true;
 
-  constructor(opts: ChannelProviderOptions) {
+  constructor(opts: ChannelProviderOptions<T>) {
     super();
 
-    this.#channel = opts.channel;
-    this.#connection = opts.connection;
-    this.#connectionOptions = opts.connectionOptions;
+    if (opts.channel) {
+      this.#channel = opts.channel;
+      this.#closeChannelOnStop = false;
+      this.#propegateStop = false;
+    } else if (opts.connectionProvider) {
+      this.#connectionProvider = opts.connectionProvider;
+      this.#propegateStop = false;
+    } else {
+      this.#connectionProvider = new DefaultConnectionProvider(opts);
+    }
   }
 
-  async get(): Promise<Channel> {
+  async get(arg: T): Promise<Channel> {
     if (!this.#channel) {
-      const connection = await this.connection();
+      const connection = await this.#connectionProvider!.get(arg);
       this.#channel = await connection.createChannel();
       this.emit('channel:created', this.#channel);
       this.#channel.on('error', error => {
@@ -53,38 +62,20 @@ export class DefaultChannelProvider
     return this.#channel;
   }
 
-  async connection(): Promise<ChannelModel> {
-    if (this.#connection) {
-      return this.#connection;
-    }
-
-    if (!this.#connectionOptions) {
-      throw new Error('Connection options not set');
-    }
-
-    this.#connection = await connect(
-      this.#connectionOptions?.url ?? this.#connectionOptions,
-    );
-    this.emit('connection:created', this.#connection);
-    this.#connection.on('error', error => {
-      this.emit('connection:error', error);
-    });
-    this.#connection.on('close', () => {
-      this.#connection = undefined;
-      this.emit('connection:closed');
-    });
-
-    return this.#connection;
-  }
-
   async stop() {
-    if (this.#channel) {
-      await this.#channel.close();
+    try {
+      if (this.#closeChannelOnStop) {
+        await this.#channel?.close();
+      }
+    } finally {
       this.#channel = undefined;
     }
-    if (this.#connection) {
-      await this.#connection.close();
-      this.#connection = undefined;
+    try {
+      if (this.#propegateStop) {
+        await this.#connectionProvider?.stop();
+      }
+    } finally {
+      this.#connectionProvider = undefined;
     }
   }
 }
