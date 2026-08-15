@@ -1,5 +1,5 @@
 import {
-  AbstractEventService,
+  AbstractEventComponent,
   EVENT_ERROR,
   EVENT_PROCESSED,
   EVENT_RECEIVED,
@@ -84,19 +84,21 @@ export class AmqpGateway<
   T extends Event = Event,
   R extends EventHandlerReturnType = unknown,
 >
-  extends AbstractEventService
+  extends AbstractEventComponent
   implements EventEmittingService<AmqpGatewayEvents<T, R>>
 {
   #channelProvider: ChannelProviderFn;
+  #consume: Replies.Consume | undefined;
   #consumeOptions: Options.Consume;
   #extractor: MessageEventExtractorFn<T>;
   #handler: EventHandlerFn<T, R>;
   #prefetch: number;
   #queueName: string;
   #queueOptions: Options.AssertQueue;
+  #running: boolean = false;
+
   #ackFn: AckFn<T>;
   #nackFn: NackFn;
-  #consume: Replies.Consume | undefined;
 
   constructor(opts: AmqpGatewayOptions<T, R>) {
     super(opts);
@@ -142,14 +144,19 @@ export class AmqpGateway<
     );
 
     this.emit('gateway:started', channel, this.#consume);
+    this.#running = true;
   }
 
   async stop() {
+    if (!this.#running) {
+      return;
+    }
     const channel = await this.#channelProvider();
     if (this.#consume) {
       await channel.cancel(this.#consume.consumerTag);
     }
     this.emit('gateway:stopped');
+    this.#running = false;
   }
 
   async handleMessage(message: ConsumeMessage | null) {

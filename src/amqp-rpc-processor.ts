@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import {
-  AbstractEventService,
+  AbstractEventComponent,
   EVENT_ERROR,
   EVENT_PROCESSED,
   EVENT_RECEIVED,
@@ -65,7 +65,7 @@ type AmqpRpcProcessorEvents<
 };
 
 export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
-  extends AbstractEventService
+  extends AbstractEventComponent
   implements
     EventProcessor<T, R>,
     EventEmittingService<AmqpRpcProcessorEvents<T, R>>
@@ -141,7 +141,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
         } catch (err) {
           this.emit('message:error', err, message);
           this.emit(EVENT_ERROR, err, event);
-          promiseChannel.send(err);
+          promiseChannel.send(err as Error);
         } finally {
           await channel.cancel(consumer.consumerTag);
           await channel.deleteQueue(replyQueue.queue);

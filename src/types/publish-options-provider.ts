@@ -5,9 +5,11 @@ import {
 } from '@sektek/synaptik';
 import { Options } from 'amqplib';
 
+import { AmqpChannelSendOptions } from './amqp-channel-send-options.js';
+
 export type PublishOptionsProviderFn<T extends Event = Event> = (
   event: T,
-  options?: Options.Publish,
+  options?: AmqpChannelSendOptions,
 ) => Options.Publish | PromiseLike<Options.Publish>;
 
 export interface PublishOptionsProvider<

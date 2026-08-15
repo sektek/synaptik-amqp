@@ -55,6 +55,7 @@ describe('ReplyListener', function () {
     const channel = await channelProvider.get();
     await channel.deleteQueue(queueName);
     await channel.deleteQueue(replyTo);
+    await channelProvider.stop();
     await connection.close();
     sinon.reset();
   });

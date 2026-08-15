@@ -18,29 +18,41 @@ const WAIT_TIME = 500;
 
 describe('AmqpGateway', function () {
   let queueName: string;
+  let gateway: AmqpGateway | undefined;
   let connection: ChannelModel, channel: Channel;
   let channelProvider: DefaultChannelProvider;
+  let originalChannelProvider: DefaultChannelProvider;
   let eventChannel: AmqpChannel;
 
   beforeEach(async function () {
     queueName = `test-queue-${randomUUID()}`;
     connection = await connect({ hostname: AMQP_HOST });
-    channelProvider = new DefaultChannelProvider({ connection });
+    channelProvider = originalChannelProvider = new DefaultChannelProvider({
+      connection,
+    });
     channel = await channelProvider.get();
     await channel.assertQueue(queueName);
     eventChannel = new AmqpChannel({ channelProvider, queueName });
   });
 
   afterEach(async function () {
+    if (gateway) {
+      await gateway.stop();
+      gateway = undefined;
+    }
     await channel.deleteQueue(queueName);
-    await channel.close();
+    // Some tests reassign `channelProvider` to a wrapper built from a raw
+    // `channel`, so `originalChannelProvider` is stopped explicitly to
+    // guarantee the connection-backed provider (and its ProcessManager)
+    // created in beforeEach is always cleaned up.
+    await originalChannelProvider.stop();
     await connection.close();
     sinon.reset();
   });
 
   it('should receive events and send them to the handler', async function () {
     const handler = fake();
-    const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+    gateway = new AmqpGateway({ channelProvider, handler, queueName });
 
     const event = await new EventBuilder().create();
     await eventChannel.send(event);
@@ -54,7 +66,7 @@ describe('AmqpGateway', function () {
     channel = spy(channel);
     channelProvider = new DefaultChannelProvider({ channel });
     const handler = fake();
-    const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+    gateway = new AmqpGateway({ channelProvider, handler, queueName });
 
     const event = await new EventBuilder().create();
     await eventChannel.send(event);
@@ -66,7 +78,7 @@ describe('AmqpGateway', function () {
 
   it('should continue processing messages after an error', async function () {
     const handler = stub().onFirstCall().throws(new Error('Handler error'));
-    const gateway = new AmqpGateway({
+    gateway = new AmqpGateway({
       channelProvider,
       handler,
       queueName,
@@ -95,7 +107,7 @@ describe('AmqpGateway', function () {
         expect(JSON.parse(message.content.toString())).to.deep.equal(event);
       };
 
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('message:received', listener);
 
       await eventChannel.send(event);
@@ -109,7 +121,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake();
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('event:received', listener);
 
       await gateway.start();
@@ -125,7 +137,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake.returns(result);
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('event:processed', listener);
 
       await gateway.start();
@@ -141,7 +153,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake.returns(result);
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('message:processed', listener);
 
       await gateway.start();
@@ -160,7 +172,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake();
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('message:acknowledged', listener);
 
       await gateway.start();
@@ -180,7 +192,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake();
       const listener = fake();
-      const gateway = new AmqpGateway({
+      gateway = new AmqpGateway({
         channelProvider,
         handler,
         queueName,
@@ -201,7 +213,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake.throws(error);
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('event:error', listener);
 
       await gateway.start();
@@ -217,7 +229,7 @@ describe('AmqpGateway', function () {
 
       const handler = fake.throws(error);
       const listener = fake();
-      const gateway = new AmqpGateway({ channelProvider, handler, queueName });
+      gateway = new AmqpGateway({ channelProvider, handler, queueName });
       gateway.on('message:error', listener);
 
       await gateway.start();
