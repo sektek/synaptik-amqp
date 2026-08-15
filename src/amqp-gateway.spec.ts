@@ -18,15 +18,18 @@ const WAIT_TIME = 500;
 
 describe('AmqpGateway', function () {
   let queueName: string;
-  let gateway: AmqpGateway;
+  let gateway: AmqpGateway | undefined;
   let connection: ChannelModel, channel: Channel;
   let channelProvider: DefaultChannelProvider;
+  let originalChannelProvider: DefaultChannelProvider;
   let eventChannel: AmqpChannel;
 
   beforeEach(async function () {
     queueName = `test-queue-${randomUUID()}`;
     connection = await connect({ hostname: AMQP_HOST });
-    channelProvider = new DefaultChannelProvider({ connection });
+    channelProvider = originalChannelProvider = new DefaultChannelProvider({
+      connection,
+    });
     channel = await channelProvider.get();
     await channel.assertQueue(queueName);
     eventChannel = new AmqpChannel({ channelProvider, queueName });
@@ -35,9 +38,14 @@ describe('AmqpGateway', function () {
   afterEach(async function () {
     if (gateway) {
       await gateway.stop();
+      gateway = undefined;
     }
     await channel.deleteQueue(queueName);
-    await channel.close();
+    // Some tests reassign `channelProvider` to a wrapper built from a raw
+    // `channel`, so `originalChannelProvider` is stopped explicitly to
+    // guarantee the connection-backed provider (and its ProcessManager)
+    // created in beforeEach is always cleaned up.
+    await originalChannelProvider.stop();
     await connection.close();
     sinon.reset();
   });

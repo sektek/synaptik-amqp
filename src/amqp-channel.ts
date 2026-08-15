@@ -1,5 +1,5 @@
 import {
-  AbstractEventService,
+  AbstractEventComponent,
   EVENT_DELIVERED,
   EVENT_ERROR,
   EVENT_RECEIVED,
@@ -14,6 +14,7 @@ import {
 } from '@sektek/utility-belt';
 
 import {
+  AmqpChannelSendOptions,
   AmqpSerializerComponent,
   AmqpSerializerFn,
   AmqpSerializerReturnType,
@@ -35,14 +36,9 @@ const DEFAULT_PUBLISH_OPTIONS_PROVIDER = (event: Event, options = {}) => ({
 });
 const DEFAULT_SERIALIZER = (event: Event) => JSON.stringify(event);
 
-type SendOptions = Options.Publish & {
-  exchange?: string;
-  routingKey?: string;
-};
-
 export type AmqpChannelFn<T extends Event = Event> = (
   event: T,
-  options?: SendOptions,
+  options?: AmqpChannelSendOptions,
 ) => Promise<void>;
 
 export type AmqpChannelComponent<T extends Event = Event> = Component<
@@ -75,7 +71,7 @@ export type AmqpChannelOptions<T extends Event = Event> = AmqpServiceOptions & {
 const DEFAULT_TIMEOUT = 10000;
 
 export class AmqpChannel<T extends Event = Event>
-  extends AbstractEventService
+  extends AbstractEventComponent
   implements EventEmittingService<AmqpChannelEvents<T>>
 {
   #channelProvider: ChannelProviderFn<Event>;
@@ -117,7 +113,7 @@ export class AmqpChannel<T extends Event = Event>
     });
   }
 
-  async send(event: T, options: SendOptions = {}) {
+  async send(event: T, options: AmqpChannelSendOptions = {}) {
     this.emit(EVENT_RECEIVED, event);
 
     try {

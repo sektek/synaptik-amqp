@@ -14,11 +14,12 @@
     "build": "npx tsc -p tsconfig.build.json",
     "lint": "eslint . --cache",
     "test": "mocha",
+    "test:min": "mocha --config .mocharc.min.cjs",
     "test:cover": "c8 npm run test"
   },
   "dependencies": {
-    "@sektek/synaptik": "^1.0.0",
-    "@sektek/utility-belt": "^1.0.0",
+    "@sektek/synaptik": "^0.4.0",
+    "@sektek/utility-belt": "^0.3.4",
     "amqplib": "^0.10.8",
     "tslib": "^2.7.0"
   },

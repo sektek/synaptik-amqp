@@ -81,6 +81,7 @@ describe('AmqpRpcProcessor', function () {
       await channel.cancel(consumer.consumerTag);
       consumer = null;
     }
+    await channelProvider.stop();
     await connection.close();
     sinon.reset();
   });

@@ -26,6 +26,7 @@ describe('AmqpChannel', function () {
   });
 
   after(async function () {
+    await channelProvider.stop();
     await connection.close();
   });
 
@@ -252,6 +253,7 @@ describe('AmqpChannel', function () {
       expect(listener).to.have.been.calledWith(match.instanceOf(Error), event);
 
       // Reestablish the connection for any following tests
+      await channelProvider.stop();
       connection = await connect({ hostname: AMQP_HOST });
       channelProvider = new DefaultChannelProvider({ connection });
     });
