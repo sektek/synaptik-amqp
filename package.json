@@ -5,7 +5,7 @@
   "author": "Edward Kelly <eddie@sektek.net>",
   "repository": {
     "type": "git",
-    "url": "git@github.com:sektek/project-name.git"
+    "url": "git@github.com:sektek/synaptik-amqp.git"
   },
   "license": "MIT",
   "main": "dist/index.js",
@@ -15,7 +15,9 @@
     "lint": "eslint . --cache",
     "test": "mocha",
     "test:min": "mocha --config .mocharc.min.cjs",
-    "test:cover": "c8 npm run test"
+    "test:cover": "c8 npm run test",
+    "packages:update": "npm install --package-lock-only --workspaces=false",
+    "release": "release-it --ci"
   },
   "dependencies": {
     "@sektek/synaptik": "^0.4.1",
@@ -24,6 +26,7 @@
     "tslib": "^2.7.0"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.6",
     "@sektek/eslint-plugin": "^2.0.0",
     "@sektek/prettier-config": "^2.0.0",
     "@types/amqplib": "^0.10.7",
@@ -39,6 +42,7 @@
     "eslint": "^9.39.1",
     "mocha": "^10.4.0",
     "prettier": "^3.2.5",
+    "release-it": "^19.2.4",
     "sinon": "^21.1.2",
     "sinon-chai": "^4.0.1",
     "tsx": "^4.20.3",
