@@ -118,7 +118,8 @@ RPC client. Sends a request event with a correlation ID and an exclusive reply q
 | `outboundChannel` | created from opts | `AmqpChannel` for sending requests |
 | `correlationIdProvider` | `randomUUID()` | Generates correlation ID per request |
 | `extractor` | `defaultEventExtractor` | Extracts `Event` from reply message |
-| `timeout` | `0` (no timeout) | Max wait for reply (ms) |
+| `replyTimeout` | `0` (no timeout) | Max wait for reply (ms) |
+| `timeout` | `10000` ms | Passed to the outbound `AmqpChannel` as its drain wait; does not limit the reply |
 
 **Processing flow:**
 ```

@@ -140,13 +140,51 @@ describe('AmqpRpcProcessor', function () {
     const processor = new AmqpRpcProcessor({
       channelProvider,
       outboundChannel,
-      timeout: WAIT_TIME,
+      replyTimeout: WAIT_TIME,
     });
 
     const channel = await channelProvider.get();
     consumer = await createConsumer(channel, queueName, async () => {});
 
+    const start = Date.now();
     await expect(processor.process(event)).to.be.rejected;
+    expect(Date.now() - start).to.be.within(WAIT_TIME - 50, WAIT_TIME + 400);
+  });
+
+  it('does not limit the reply wait with timeout', async function () {
+    const event = await EventBuilder.create();
+    const processor = new AmqpRpcProcessor({
+      channelProvider,
+      outboundChannel,
+      timeout: 100,
+    });
+
+    const channel = await channelProvider.get();
+    consumer = await createConsumer(channel, queueName, async message => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      respond(channel, message, event);
+    });
+
+    const response = await processor.process(event);
+    expect(response).to.deep.equal(event);
+  });
+
+  it('passes timeout to the outbound channel', async function () {
+    const event = await EventBuilder.create();
+    const channel = await channelProvider.get();
+    const publish = sinon.stub(channel, 'publish').returns(false);
+    const processor = new AmqpRpcProcessor({
+      channelProvider,
+      queueName,
+      timeout: 100,
+    });
+
+    const start = Date.now();
+    await expect(processor.process(event)).to.be.rejectedWith(
+      /Failed to publish message/,
+    );
+    publish.restore();
+    expect(Date.now() - start).to.be.below(2000);
   });
 
   describe('event emitter', function () {
@@ -235,7 +273,7 @@ describe('AmqpRpcProcessor', function () {
       const processor = new AmqpRpcProcessor({
         channelProvider,
         outboundChannel,
-        timeout: WAIT_TIME,
+        replyTimeout: WAIT_TIME,
         extractor: async () => {
           throw error;
         },
