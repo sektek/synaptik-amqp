@@ -127,7 +127,7 @@ RPC uses two pieces, one on each side of the queue.
 
 1. Creates an exclusive, server-named reply queue.
 2. Publishes the event with a `correlationId` and `replyTo` set to that queue.
-3. Resolves with the reply event, or rejects if the reply is invalid or the timeout elapses.
+3. Resolves with the reply event, or rejects if the reply is invalid or `replyTimeout` elapses.
 4. Cancels the consumer and deletes the reply queue.
 
 ```ts
@@ -136,7 +136,7 @@ import { AmqpRpcProcessor } from '@sektek/synaptik-amqp';
 const rpc = new AmqpRpcProcessor({
   connectionOptions: { url: 'amqp://localhost' },
   queueName: 'rpc.quote',
-  timeout: 5000,
+  replyTimeout: 5000,
 });
 
 const reply = await rpc.process({ id: '1', type: 'quote.request', data: { sku: 'abc' } });
@@ -146,14 +146,15 @@ It accepts all the `AmqpChannel` options (for the outbound request) plus:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `timeout` | `0` (wait forever) | Milliseconds to wait for the reply. |
+| `replyTimeout` | `0` (wait forever) | Milliseconds to wait for the reply. |
+| `timeout` | `10000` | Passed to the outbound `AmqpChannel` as its publish drain wait. It does not limit the reply wait. |
 | `correlationIdProvider` | `randomUUID()` | Generates the correlation id per request. |
 | `extractor` | JSON parse | Converts the reply message into an `Event`. |
 | `outboundChannel` | new `AmqpChannel` | Supply a preconfigured `AmqpChannel` for requests. |
 
 A reply whose `correlationId` does not match rejects the call.
 
-> `timeout` is shared with `AmqpChannel`, where it bounds the publish drain wait (default 10 s). In `AmqpRpcProcessor` the same value also bounds the reply wait; to tune them separately, pass your own `outboundChannel`.
+> `timeout` and `replyTimeout` are independent: `timeout` only bounds the publish drain wait on the outbound channel, and `replyTimeout` only bounds the reply wait. Callers that used `timeout` to bound the reply must switch to `replyTimeout`.
 
 ### Server: `AmqpGateway` + `ReplyListener`
 

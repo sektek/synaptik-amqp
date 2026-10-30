@@ -45,8 +45,8 @@ type AmqpProcessorOptions<
   outboundChannel?: AmqpChannel<T>;
   extractor?: MessageEventExtractorComponent<R>;
   correlationIdProvider?: CorrelationIdProviderComponent<T>;
-  /** Timeout in milliseconds */
-  timeout?: number;
+  /** Milliseconds to wait for the reply; `0` waits forever. */
+  replyTimeout?: number;
 };
 
 type AmqpRpcProcessorEvents<
@@ -98,7 +98,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
       name: 'channelProvider',
       defaultProvider: () => new DefaultChannelProvider(opts),
     });
-    this.#timeout = opts.timeout ?? 0;
+    this.#timeout = opts.replyTimeout ?? 0;
     this.#correlationIdProvider = getComponent(
       opts.correlationIdProvider,
       'get',
