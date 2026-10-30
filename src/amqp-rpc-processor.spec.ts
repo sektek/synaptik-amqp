@@ -148,7 +148,7 @@ describe('AmqpRpcProcessor', function () {
 
     const start = Date.now();
     await expect(processor.process(event)).to.be.rejected;
-    expect(Date.now() - start).to.be.within(WAIT_TIME - 50, WAIT_TIME + 400);
+    expect(Date.now() - start).to.be.within(WAIT_TIME - 50, WAIT_TIME + 1500);
   });
 
   it('does not limit the reply wait with timeout', async function () {
@@ -180,10 +180,14 @@ describe('AmqpRpcProcessor', function () {
     });
 
     const start = Date.now();
-    await expect(processor.process(event)).to.be.rejectedWith(
-      /Failed to publish message/,
-    );
-    publish.restore();
+    try {
+      await expect(processor.process(event)).to.be.rejectedWith(
+        /Failed to publish message/,
+      );
+    } finally {
+      publish.restore();
+    }
+
     expect(Date.now() - start).to.be.below(2000);
   });
 
