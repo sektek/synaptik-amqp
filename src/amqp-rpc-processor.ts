@@ -143,25 +143,42 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
           this.emit(EVENT_ERROR, err, event);
           promiseChannel.send(err as Error);
         } finally {
-          await channel.cancel(consumer.consumerTag);
-          await channel.deleteQueue(replyQueue.queue);
+          await this.#release(channel, consumer.consumerTag, replyQueue.queue);
         }
       },
       { noAck: true, exclusive: true },
     );
 
-    if (this.#timeout > 0) {
-      setTimeout(async () => {
-        await channel.cancel(consumer.consumerTag);
-        await channel.deleteQueue(replyQueue.queue);
-      }, this.#timeout);
+    const timer =
+      this.#timeout > 0
+        ? setTimeout(
+            () =>
+              this.#release(channel, consumer.consumerTag, replyQueue.queue),
+            this.#timeout,
+          )
+        : undefined;
+
+    try {
+      await this.#outboundChannel(event, {
+        correlationId,
+        replyTo: replyQueue.queue,
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      await this.#release(
+        channel,
+        consumer.consumerTag,
+        replyQueue.queue,
+      ).catch(() => undefined);
+
+      throw err;
     }
 
-    await this.#outboundChannel(event, {
-      correlationId,
-      replyTo: replyQueue.queue,
-    });
-
     return promiseChannel.get();
+  }
+
+  async #release(channel: Channel, consumerTag: string, queue: string) {
+    await channel.cancel(consumerTag);
+    await channel.deleteQueue(queue);
   }
 }

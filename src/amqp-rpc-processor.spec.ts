@@ -169,6 +169,31 @@ describe('AmqpRpcProcessor', function () {
     expect(response).to.deep.equal(event);
   });
 
+  it('releases the reply consumer and queue when the send fails', async function () {
+    const event = await EventBuilder.create();
+    const channel = await channelProvider.get();
+    const publish = sinon.stub(channel, 'publish').returns(false);
+    const processor = new AmqpRpcProcessor({
+      channelProvider,
+      queueName,
+      timeout: 100,
+    });
+
+    try {
+      await expect(processor.process(event)).to.be.rejectedWith(
+        /Failed to publish message/,
+      );
+    } finally {
+      publish.restore();
+    }
+
+    const replyTo = publish.firstCall.args[3]?.replyTo as string;
+    const checkChannel = await connection.createChannel();
+    checkChannel.on('error', () => undefined);
+
+    await expect(checkChannel.checkQueue(replyTo)).to.be.rejected;
+  });
+
   it('passes timeout to the outbound channel', async function () {
     const event = await EventBuilder.create();
     const channel = await channelProvider.get();
