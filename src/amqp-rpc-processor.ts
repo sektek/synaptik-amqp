@@ -45,8 +45,8 @@ type AmqpProcessorOptions<
   outboundChannel?: AmqpChannel<T>;
   extractor?: MessageEventExtractorComponent<R>;
   correlationIdProvider?: CorrelationIdProviderComponent<T>;
-  /** Timeout in milliseconds */
-  timeout?: number;
+  /** Milliseconds to wait for the reply; `0` waits forever. */
+  replyTimeout?: number;
 };
 
 type AmqpRpcProcessorEvents<
@@ -98,7 +98,7 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
       name: 'channelProvider',
       defaultProvider: () => new DefaultChannelProvider(opts),
     });
-    this.#timeout = opts.timeout ?? 0;
+    this.#timeout = opts.replyTimeout ?? 0;
     this.#correlationIdProvider = getComponent(
       opts.correlationIdProvider,
       'get',
@@ -143,25 +143,42 @@ export class AmqpRpcProcessor<T extends Event = Event, R extends Event = T>
           this.emit(EVENT_ERROR, err, event);
           promiseChannel.send(err as Error);
         } finally {
-          await channel.cancel(consumer.consumerTag);
-          await channel.deleteQueue(replyQueue.queue);
+          await this.#release(channel, consumer.consumerTag, replyQueue.queue);
         }
       },
       { noAck: true, exclusive: true },
     );
 
-    if (this.#timeout > 0) {
-      setTimeout(async () => {
-        await channel.cancel(consumer.consumerTag);
-        await channel.deleteQueue(replyQueue.queue);
-      }, this.#timeout);
+    const timer =
+      this.#timeout > 0
+        ? setTimeout(
+            () =>
+              this.#release(channel, consumer.consumerTag, replyQueue.queue),
+            this.#timeout,
+          )
+        : undefined;
+
+    try {
+      await this.#outboundChannel(event, {
+        correlationId,
+        replyTo: replyQueue.queue,
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      await this.#release(
+        channel,
+        consumer.consumerTag,
+        replyQueue.queue,
+      ).catch(() => undefined);
+
+      throw err;
     }
 
-    await this.#outboundChannel(event, {
-      correlationId,
-      replyTo: replyQueue.queue,
-    });
-
     return promiseChannel.get();
+  }
+
+  async #release(channel: Channel, consumerTag: string, queue: string) {
+    await channel.cancel(consumerTag);
+    await channel.deleteQueue(queue);
   }
 }
