@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/sektek/synaptik-amqp/compare/v0.2.0...v0.3.0) (2026-11-08)
+
+### ⚠ BREAKING CHANGES
+
+* **synaptik-amqp:** AmqpRpcProcessor no longer uses timeout to bound the reply wait; use replyTimeout instead.
+
+* test: restore publish stub in finally and loosen timing bound
+
+* fix(synaptik-amqp): release the reply consumer and queue when the request send fails
+
+### Bug Fixes
+
+* **synaptik-amqp:** separate AmqpRpcProcessor reply timeout from publish timeout ([#10](https://github.com/sektek/synaptik-amqp/issues/10)) ([c0d8040](https://github.com/sektek/synaptik-amqp/commit/c0d804082f7d1938321d8e0e842a29e29b81c80c))
+
 ## 0.2.0 (2026-08-15)
 
 ### ⚠ BREAKING CHANGES
