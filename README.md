@@ -82,10 +82,18 @@ Error handling: if the extractor or handler throws, the message is nacked (reque
 |-------|-----------|
 | `gateway:started` | `channel, consumer` |
 | `gateway:stopped` | |
+| `service:started` | |
+| `service:startError` | `error` |
+| `service:stopped` | |
+| `service:stopError` | `error` |
 | `message:received` | `message` |
 | `message:processed` | `message, event, result` |
 | `message:acknowledged` | `channel, message, event` |
 | `message:error` | `error, message` |
+
+`gateway:started` and `gateway:stopped` are the gateway-specific signals; `gateway:started` carries the channel and consumer. The `service:` events are the generic lifecycle contract shared by every startable and stoppable component in `@sektek/utility-belt`. They are emitted as separate events, in the same way the gateway emits both `message:received` and `event:received`.
+
+On success the gateway-specific event is emitted first, immediately followed by its `service:` counterpart (`gateway:started` then `service:started`, `gateway:stopped` then `service:stopped`). On failure only the matching `service:startError` or `service:stopError` is emitted, carrying an `Error`, and the original error is rethrown unchanged. Calling `stop()` on a gateway that is not running does nothing and emits no events.
 
 ## Publishing events: `AmqpChannel`
 
@@ -216,6 +224,7 @@ new AmqpChannel({
 
 - `DefaultConnectionProvider` emits `connection:created`, `connection:closed`, and `connection:error`. `get()` rejects after `stop()`.
 - `DefaultChannelProvider` emits `channel:created`, `channel:closed`, and `channel:error`. A closed channel is recreated on the next `get()`.
+- Both providers also emit `service:stopped` when `stop()` completes, or `service:stopError` with the error (which `stop()` then rethrows). They have no `start()`, so they never emit the start events. When a `DefaultChannelProvider` stops the connection provider it created, the connection provider's events are not re-emitted by the channel provider.
 - Each provider closes only what it created. A `connection` or `channel` you pass in is left open for you to manage.
 - `DefaultConnectionProvider` registers itself with a `ProcessManager` (yours via `processManager`, otherwise one of its own) from `@sektek/utility-belt`, which manages stopping it.
 

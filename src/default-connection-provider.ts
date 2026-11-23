@@ -1,11 +1,19 @@
 import EventEmitter from 'events';
 
 import { ChannelModel, connect } from 'amqplib';
-import { EventEmittingService, ProcessManager } from '@sektek/utility-belt';
+import {
+  EventEmittingService,
+  ProcessManager,
+  SERVICE_STOPPED,
+  SERVICE_STOP_ERROR,
+  StoppableEvents,
+} from '@sektek/utility-belt';
 
 import { ConnectionOptions, ConnectionProvider } from './types/index.js';
+import { toError } from './to-error.js';
 
-type DefaultConnectionProviderEvents = {
+/** Events emitted by a {@link DefaultConnectionProvider}. */
+export type DefaultConnectionProviderEvents = StoppableEvents & {
   'connection:created': (connection: ChannelModel) => void;
   'connection:closed': () => void;
   'connection:error': (error: unknown) => void;
@@ -17,6 +25,14 @@ export type DefaultConnectionProviderOptions = {
   processManager?: ProcessManager;
 };
 
+/**
+ * Provides a single shared AMQP connection, creating it on first use.
+ *
+ * **Lifecycle events** — `stop()` emits `service:stopped` once the connection
+ * is closed. If stopping fails, it emits `service:stopError` with an `Error`
+ * and rethrows the original thrown value. Errors closing the connection are
+ * emitted as `connection:error` and do not fail the stop.
+ */
 export class DefaultConnectionProvider
   extends EventEmitter
   implements
@@ -91,7 +107,23 @@ export class DefaultConnectionProvider
     return this.#connection;
   }
 
+  /**
+   * Closes the connection it created and stops accepting `get()` calls.
+   *
+   * Emits `service:stopped` on success, or `service:stopError` and rethrows.
+   */
   async stop(): Promise<void> {
+    try {
+      await this.#stop();
+    } catch (err) {
+      this.emit(SERVICE_STOP_ERROR, toError(err));
+      throw err;
+    }
+
+    this.emit(SERVICE_STOPPED);
+  }
+
+  async #stop(): Promise<void> {
     this.#running = false;
 
     try {
