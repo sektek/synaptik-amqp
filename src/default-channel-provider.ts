@@ -32,11 +32,9 @@ export type DefaultChannelProviderEvents = StoppableEvents & {
 /**
  * Provides a single shared AMQP channel, creating it on first use.
  *
- * **Lifecycle events** — `stop()` emits `service:stopped` once the channel is
- * closed and any stop propagated to the connection provider has completed. If
- * stopping fails, it emits `service:stopError` with an `Error` and rethrows the
- * original thrown value. The connection provider's own lifecycle events are
- * not re-emitted by this provider.
+ * Emits the `Service` stop events; see `stop()`. The provider has no
+ * `start()`, so it never emits the start events. Emission is synchronous and
+ * listener exceptions are not isolated.
  */
 export class DefaultChannelProvider<T = void>
   extends EventEmitter
@@ -83,7 +81,14 @@ export class DefaultChannelProvider<T = void>
    * Closes the channel it created and, if it created its own connection
    * provider, stops that too.
    *
-   * Emits `service:stopped` on success, or `service:stopError` and rethrows.
+   * Emits `service:stopped` once the channel is closed and any propagated stop
+   * of the connection provider has completed. The connection provider's own
+   * events are not re-emitted by this provider.
+   *
+   * Errors closing the channel are emitted as `channel:error` and do not fail
+   * the stop. If the propagated stop fails, emits only `service:stopError`
+   * with an `Error` (a non-`Error` thrown value is wrapped with the original
+   * as its `cause`) and rethrows the original thrown value.
    */
   async stop() {
     try {

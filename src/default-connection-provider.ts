@@ -28,10 +28,9 @@ export type DefaultConnectionProviderOptions = {
 /**
  * Provides a single shared AMQP connection, creating it on first use.
  *
- * **Lifecycle events** — `stop()` emits `service:stopped` once the connection
- * is closed. If stopping fails, it emits `service:stopError` with an `Error`
- * and rethrows the original thrown value. Errors closing the connection are
- * emitted as `connection:error` and do not fail the stop.
+ * Emits the `Service` stop events; see `stop()`. The provider has no
+ * `start()`, so it never emits the start events. Emission is synchronous and
+ * listener exceptions are not isolated.
  */
 export class DefaultConnectionProvider
   extends EventEmitter
@@ -110,7 +109,12 @@ export class DefaultConnectionProvider
   /**
    * Closes the connection it created and stops accepting `get()` calls.
    *
-   * Emits `service:stopped` on success, or `service:stopError` and rethrows.
+   * Emits `service:stopped` once the connection is closed.
+   *
+   * Errors closing the connection are emitted as `connection:error` and do not
+   * fail the stop. If another step of stopping fails, emits only
+   * `service:stopError` with an `Error` (a non-`Error` thrown value is wrapped
+   * with the original as its `cause`) and rethrows the original thrown value.
    */
   async stop(): Promise<void> {
     try {

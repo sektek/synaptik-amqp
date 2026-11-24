@@ -50,6 +50,19 @@ export type AmqpGatewayOptions<
 /**
  * Events emitted by an {@link AmqpGateway}.
  *
+ * - `gateway:started` `(channel, consumer)`: consuming has started.
+ * - `gateway:stopped`: consuming has stopped. The gateway emits it without
+ *   arguments.
+ * - `service:started`: the `Service` counterpart of `gateway:started`.
+ * - `service:startError` `(error)`: `start()` failed.
+ * - `service:stopped`: the `Service` counterpart of `gateway:stopped`.
+ * - `service:stopError` `(error)`: `stop()` failed.
+ * - `message:received` `(message)`: a message arrived.
+ * - `message:processed` `(message, event, result)`: the handler returned.
+ * - `message:acknowledged` `(channel, message, event)`: the message was
+ *   acknowledged.
+ * - `message:error` `(error, message)`: processing the message failed.
+ *
  * @template T The event type handled by the gateway.
  * @template R The result type returned by the handler.
  */
@@ -93,16 +106,13 @@ const noAckFn = () => {};
 /**
  * The `AmqpGateway` class provides functionality for handling AMQP events.
  *
- * **Lifecycle events** — `start()` and `stop()` emit the generic service
- * lifecycle events (`service:started`, `service:startError`,
- * `service:stopped`, `service:stopError`) alongside the gateway-specific
- * `gateway:started` (with `channel, consumer`) and `gateway:stopped`, in the
- * same way that `event:received` accompanies `message:received`. On success
- * the gateway-specific event is emitted first, immediately followed by its
- * service counterpart. On failure only the matching `service:*Error` event is
- * emitted, carrying an `Error`, and the original thrown value is rethrown
- * unchanged. A `stop()` on a gateway that is not running does nothing and
- * emits no events.
+ * Emits the `Service` lifecycle events; see `start()` and `stop()`. On
+ * success, the gateway-specific event (`gateway:started`, `gateway:stopped`)
+ * is emitted first, immediately followed by its `service:` counterpart. On
+ * failure, only the matching `service:*Error` event is emitted. It carries an
+ * `Error`; a non-`Error` thrown value is wrapped with the original as its
+ * `cause`, and the original value is rethrown. Emission is synchronous and
+ * listener exceptions are not isolated, so they propagate to the caller.
  */
 export class AmqpGateway<
   T extends Event = Event,
@@ -160,8 +170,12 @@ export class AmqpGateway<
   /**
    * Asserts the queue and starts consuming from it.
    *
-   * Emits `gateway:started` followed by `service:started` once consuming. If
-   * starting fails, emits `service:startError` and rethrows.
+   * Once consuming, emits `gateway:started` with `(channel, consumer)`, then
+   * `service:started`.
+   *
+   * If getting the channel, asserting the queue, setting the prefetch, or
+   * consuming fails, emits only `service:startError` with an `Error` and
+   * rethrows the original thrown value.
    */
   async start() {
     let channel: Channel;
@@ -186,10 +200,16 @@ export class AmqpGateway<
   }
 
   /**
-   * Cancels the consumer. Does nothing if the gateway is not running.
+   * Cancels the consumer.
    *
-   * Emits `gateway:stopped` followed by `service:stopped` once the consumer is
-   * cancelled. If stopping fails, emits `service:stopError` and rethrows.
+   * Once the consumer is cancelled, emits `gateway:stopped` without arguments,
+   * then `service:stopped`.
+   *
+   * If the gateway is not running, returns without emitting any event.
+   *
+   * If getting the channel or cancelling the consumer fails, emits only
+   * `service:stopError` with an `Error` and rethrows the original thrown
+   * value.
    */
   async stop() {
     if (!this.#running) {
