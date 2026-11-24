@@ -1,11 +1,19 @@
 import EventEmitter from 'events';
 
 import { ChannelModel, connect } from 'amqplib';
-import { EventEmittingService, ProcessManager } from '@sektek/utility-belt';
+import {
+  EventEmittingService,
+  ProcessManager,
+  SERVICE_STOPPED,
+  SERVICE_STOP_ERROR,
+  StoppableEvents,
+  toError,
+} from '@sektek/utility-belt';
 
 import { ConnectionOptions, ConnectionProvider } from './types/index.js';
 
-type DefaultConnectionProviderEvents = {
+/** Events emitted by a {@link DefaultConnectionProvider}. */
+export type DefaultConnectionProviderEvents = StoppableEvents & {
   'connection:created': (connection: ChannelModel) => void;
   'connection:closed': () => void;
   'connection:error': (error: unknown) => void;
@@ -17,6 +25,13 @@ export type DefaultConnectionProviderOptions = {
   processManager?: ProcessManager;
 };
 
+/**
+ * Provides a single shared AMQP connection, creating it on first use.
+ *
+ * Emits the `Service` stop events; see `stop()`. The provider has no
+ * `start()`, so it never emits the start events. Emission is synchronous and
+ * listener exceptions are not isolated.
+ */
 export class DefaultConnectionProvider
   extends EventEmitter
   implements
@@ -91,7 +106,28 @@ export class DefaultConnectionProvider
     return this.#connection;
   }
 
+  /**
+   * Closes the connection it created and stops accepting `get()` calls.
+   *
+   * Emits `service:stopped` once the connection is closed.
+   *
+   * Errors closing the connection are emitted as `connection:error` and do not
+   * fail the stop. If another step of stopping fails, emits only
+   * `service:stopError` with an `Error` (a non-`Error` thrown value is wrapped
+   * with the original as its `cause`) and rethrows the original thrown value.
+   */
   async stop(): Promise<void> {
+    try {
+      await this.#stop();
+    } catch (err) {
+      this.emit(SERVICE_STOP_ERROR, toError(err));
+      throw err;
+    }
+
+    this.emit(SERVICE_STOPPED);
+  }
+
+  async #stop(): Promise<void> {
     this.#running = false;
 
     try {

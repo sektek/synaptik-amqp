@@ -64,6 +64,10 @@ message → emit message:received
 |-------|---------|
 | `gateway:started` | `(channel, consumer)` |
 | `gateway:stopped` | — |
+| `service:started` | — |
+| `service:startError` | `(error)` |
+| `service:stopped` | — |
+| `service:stopError` | `(error)` |
 | `message:received` | `(message)` |
 | `message:processed` | `(message, event, result)` |
 | `message:acknowledged` | `(channel, message, event)` |
@@ -73,6 +77,8 @@ message → emit message:received
 | `event:error` | `(error, event)` |
 
 If `noAck: true` in `consumeOptions`, ack/nack calls become no-ops.
+
+`gateway:*` are the gateway-specific signals (`gateway:started` carries the channel and consumer); `service:*` are the generic utility-belt lifecycle contract, emitted as separate events. On success the gateway event is emitted first, then its `service:` counterpart. On failure only `service:startError` / `service:stopError` is emitted (with an `Error`) and the original error is rethrown. `stop()` on a gateway that is not running emits nothing.
 
 ---
 
@@ -148,7 +154,7 @@ Manages connection and channel lifecycle. Caches both; reconnects on demand.
 
 **Methods:** `get(): Promise<Channel>`, `connection(): Promise<ChannelModel>`
 
-**Events:** `connection:created`, `connection:closed`, `connection:error`, `channel:created`, `channel:closed`, `channel:error`
+**Events:** `connection:created`, `connection:closed`, `connection:error`, `channel:created`, `channel:closed`, `channel:error`, plus `service:stopped` / `service:stopError` from `stop()` (no `start()`, so no start events). `DefaultConnectionProvider` is the same: `connection:*` plus `service:stopped` / `service:stopError`. A channel provider's propagated stop to its own connection provider does not re-emit the connection provider's events.
 
 ---
 
