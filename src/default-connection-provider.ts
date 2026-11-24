@@ -7,10 +7,10 @@ import {
   SERVICE_STOPPED,
   SERVICE_STOP_ERROR,
   StoppableEvents,
+  toError,
 } from '@sektek/utility-belt';
 
 import { ConnectionOptions, ConnectionProvider } from './types/index.js';
-import { toError } from './to-error.js';
 
 /** Events emitted by a {@link DefaultConnectionProvider}. */
 export type DefaultConnectionProviderEvents = StoppableEvents & {

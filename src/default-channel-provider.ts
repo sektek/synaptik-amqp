@@ -6,6 +6,7 @@ import {
   SERVICE_STOP_ERROR,
   StoppableEvents,
   isStoppable,
+  toError,
 } from '@sektek/utility-belt';
 import { Channel } from 'amqplib';
 
@@ -15,7 +16,6 @@ import {
   DefaultConnectionProvider,
   DefaultConnectionProviderOptions,
 } from './default-connection-provider.js';
-import { toError } from './to-error.js';
 
 type ChannelProviderOptions<T = void> = DefaultConnectionProviderOptions & {
   channel?: Channel;

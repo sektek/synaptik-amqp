@@ -19,6 +19,7 @@ import {
   SERVICE_STOP_ERROR,
   ServiceEvents,
   getComponent,
+  toError,
 } from '@sektek/utility-belt';
 
 import {
@@ -29,7 +30,6 @@ import {
 } from './types/index.js';
 import { DefaultChannelProvider } from './default-channel-provider.js';
 import { defaultEventExtractor } from './default-event-extractor.js';
-import { toError } from './to-error.js';
 
 export type AmqpGatewayOptions<
   T extends Event = Event,
