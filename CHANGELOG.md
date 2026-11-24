@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/sektek/synaptik-amqp/compare/v0.3.0...v0.4.0) (2026-11-24)
+
+### ⚠ BREAKING CHANGES
+
+* **synaptik-amqp:** emit lifecycle events from AmqpGateway and its providers (#11)
+
+### Features
+
+* **synaptik-amqp:** emit lifecycle events from AmqpGateway and its providers ([#11](https://github.com/sektek/synaptik-amqp/issues/11)) ([c154cfb](https://github.com/sektek/synaptik-amqp/commit/c154cfb0f079b079c06bec6197a89a5f1722aaa9))
+
 ## [0.3.0](https://github.com/sektek/synaptik-amqp/compare/v0.2.0...v0.3.0) (2026-11-08)
 
 ### ⚠ BREAKING CHANGES
